@@ -2,8 +2,8 @@
 
 .pdf-embed object {
   width: 100%;
-  height: 90vh;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  height: 95vh;
+  border: 0;
 }
 
 /* Zen reading width: roughly an A4 page. */
@@ -11,4 +11,11 @@ main.content {
   max-width: 210mm;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Let PDF embeds be wider than the text column (but still responsive). */
+.pdf-embed {
+  width: min(260mm, calc(100vw - 2rem));
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
