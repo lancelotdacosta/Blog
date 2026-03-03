@@ -1,0 +1,21 @@
+---
+title: "My first post"
+date: 2026-03-03
+---
+
+This is a starter post to prove the workflow end-to-end.
+
+## Inline math
+
+Euler’s identity: $e^{i\\pi} + 1 = 0$.
+
+## Display math
+
+$$
+\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}
+$$
+
+## A short derivation (LaTeX text, not images)
+
+If $f(x) = x^2$, then $f'(x) = 2x$.
+
