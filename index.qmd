@@ -6,5 +6,6 @@ listing:
   type: default
 ---
 
-Welcome. Here is my working public notebook—mostly unpolished explorations, sketches, and working drafts as I learn and think. I hope you find some of it useful.
+Welcome. This is where I publish notes and longer posts - these are mostly unpolished explorations, sketches, and working drafts as I learn and think. I hope you find some of them useful.
+
 
