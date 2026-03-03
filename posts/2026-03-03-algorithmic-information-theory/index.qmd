@@ -2,7 +2,6 @@
 title: "Preliminaries on Computability and Algorithmic Information Theory"
 date: 2026-03-03
 toc: false
-page-layout: full
 ---
 
 [Download the PDF](algorithmic-information-theory.pdf)
@@ -12,11 +11,3 @@ page-layout: full
   <p>Your browser can’t display PDFs inline. <a href="algorithmic-information-theory.pdf">Download the PDF</a>.</p>
 </object>
 :::
-
-<details>
-<summary>HTML version (rough)</summary>
-
-[Open the HTML version](html.qmd)
-
-</details>
-

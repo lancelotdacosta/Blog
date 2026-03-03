@@ -16,7 +16,6 @@ format:
     css: styles.css
     toc: true
     math: mathjax
-    page-layout: full
     grid:
       body-width: 210mm
       margin-width: 0px

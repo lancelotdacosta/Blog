@@ -1,6 +1,5 @@
 ---
 title: "Blog"
-page-layout: full
 listing:
   contents: posts
   sort: "date desc"
@@ -8,4 +7,3 @@ listing:
 ---
 
 Welcome. This is where I publish notes and longer posts - these are mostly unpolished explorations, sketches, and working drafts as I learn and think. I hope you find some of them useful.
-
