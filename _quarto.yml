@@ -3,13 +3,12 @@ project:
   output-dir: _site
 
 website:
-  title: "Lancelot Dacosta — Blog"
+  title: "Lancelot Da Costa"
   navbar:
-    left:
-      - href: index.qmd
-        text: Home
-      - href: about.qmd
-        text: About
+    title: "Lancelot Da Costa"
+    logo-href: "https://www.lancelotdacosta.com/"
+    left: []
+    right: []
 
 format:
   html:
@@ -17,4 +16,3 @@ format:
     css: styles.css
     toc: true
     math: mathjax
-

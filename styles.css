@@ -1,2 +1,6 @@
 /* Keep this minimal; expand as you iterate. */
 
+/* Show "Blog" in the navbar brand, but keep only the name as the link target. */
+.navbar .navbar-brand::after {
+  content: " Blog";
+}

@@ -1,6 +1,0 @@
----
-title: "About"
----
-
-Hi — I’m Lancelot. I write about math, engineering, and things I’m learning.
-
