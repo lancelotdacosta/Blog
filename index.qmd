@@ -6,5 +6,5 @@ listing:
   type: default
 ---
 
-Welcome. Here are notes on things I’m learning or thinking about—mostly unpolished explorations, sketches, and stream-of-consciousness drafts. If you find something useful, feel free to reference it in your own work.
+Welcome. Here is my working public notebook—mostly unpolished explorations, sketches, and working drafts as I learn and think. I hope you find some of it useful.
 
