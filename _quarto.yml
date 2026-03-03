@@ -2,7 +2,7 @@ project:
   type: website
   output-dir: _site
   resources:
-    - scripts/meta-labels.js
+    - scripts/meta-labels.html
 
 website:
   title: "Lancelot Da Costa"
@@ -18,7 +18,7 @@ format:
     css: styles.css
     toc: true
     math: mathjax
-    include-after-body: scripts/meta-labels.js
+    include-after-body: scripts/meta-labels.html
     grid:
       body-width: 210mm
       margin-width: 0px
