@@ -19,3 +19,11 @@ main.content {
   margin-left: 50%;
   transform: translateX(-50%);
 }
+
+/* Draw a divider above the first listing item too, matching the
+   separators the theme places between posts. */
+.quarto-listing-default .quarto-post:first-child {
+  border-top: 1px solid #dee2e6;
+  padding-top: 1.5em;
+  margin-top: 1.5em;
+}
