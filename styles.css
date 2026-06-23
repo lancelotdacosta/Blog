@@ -20,6 +20,13 @@ main.content {
   transform: translateX(-50%);
 }
 
+/* Balance the spacing around each post's separator line: the theme
+   only adds space below the line (margin-bottom), so add equal space
+   above it. */
+.quarto-listing-default .quarto-post {
+  padding-bottom: 1.5em;
+}
+
 /* Draw a divider above the first listing item too, matching the
    separators the theme places between posts. */
 .quarto-listing-default .quarto-post:first-child {
