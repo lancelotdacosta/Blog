@@ -1,0 +1,110 @@
+---
+title: "Current Thoughts on Causal Representation Learning vs Deep Generative Modeling and What Might Be Next"
+date: 2026-06-23
+author: "Lancelot Da Costa & Opus 4.8"
+draft: false
+toc: true
+bibliography: references.bib
+---
+
+*A research note. I am trying to pin down how causal representation learning (CRL) actually differs from deep generative modeling, and find that they are much more similar than they seem. I am writing this partly to preserve the confusion rather than to resolve it, and partly to sketch some thoughts as to what may come next. Note that I am not an expert in CRL and may be missing many important points.*
+
+## Deep generative modeling vs Causal Representation Learning
+
+Both deep generative modeling and CRL train models on data by maximizing likelihood. That much seems uncontroversial.
+
+In ordinary deep learning we usually do *conditional* maximum likelihood: we map inputs to outputs and maximize $\log p_\theta(y \mid x)$. In deep generative modeling we maximize the likelihood of the data itself, $\log p_\theta(x)$, often with latent variables and a variational bound [@kingma2014autoencoding]. In CRL, as I understand it, the stated goal is to identify a generative *causal* model — the right variables, the right graph — and we typically do this, again, by maximizing likelihood [@scholkopf2021towards].
+
+So where is the difference? The cleanest distinction I can find is the *data*: CRL usually assumes access to observational *and* interventional/action data, whereas deep generative modeling usually has only observations. But once I strip away the data difference, fitting a causal generative model by maximum likelihood starts to look like we are solving the same statistical problem as deep generative modeling, except perhaps with a different model class, different regularizers, and different optimization dynamics.
+
+CRL also emphasizes that the variables and connections should be *meaningful*, and that the graph should be *sparse*. But "meaningful" feels close to "interpretable," and interpretability usually requires small models. And sparsity is a complexity prior. So now the contrast reads: deep learning fits the data and (somehow) controls complexity, and CRL fits the data and (explicitly) controls complexity. That is the same goal stated twice.
+
+Here is a move that shrinks down the distinction. If we want to *search* over causal graphs, a standard and useful relaxation is to let the discrete "connected / not connected" edges become continuous weights, so that gradient descent can do the searching. But the moment we do that, we are back to optimizing a continuous, over-parameterized model by gradient descent — which is just deep learning. Deep nets are over-parameterized and (hopefully) discover useful sub-models through gradient descent, regularization and architecture choices; CRL tries to build the right small model from scratch. But if both relax to continuous optimization, they meet in the middle.
+
+## A possible over-strong consequence
+
+The tempting conclusion: there is no real difference between CRL and deep learning. Both aim at maximum likelihood while minimizing complexity. Deep learning controls complexity implicitly — through regularization and generalization to held-out data (and if natural data has low Kolmogorov complexity, optimizing for generalization should favor simpler solutions [@goldblum2024nofreelunch]). CRL controls complexity explicitly — through meaningful, sparse structure.
+
+I think this strong version must be too strong, but I want to be careful about *why*. Let me separate the cases:
+
+- If CRL means **fitting a neural generative model with latent variables**, then yes, it looks like deep generative modeling.
+- If CRL means **recovering the right causal variables and mechanisms under explicit assumptions**, then it is a sharper and harder problem — this is the identifiability program, and it is genuinely different.
+- If CRL means **fitting causal models to action-observation data**, then it is close to deep generative modeling but with a much richer data stream.
+
+So the real difference, if there is one, lives in two places: **identifiability** and the **action/intervention signal**. The rest is, I suspect, the same machine.
+
+### The identifiability program, and the ground-truth problem
+
+A lot of CRL is identifiability-based [@locatello2019challenging; @khemakhem2020variational; @ahuja2022weakly; @lachapelle2021mechanism]. The question is: if I fit a causal model by maximum likelihood, do I recover the *right* causal variables, and under what conditions? That is a real and important question that deep generative modeling rarely even asks.
+
+But here is what nags at me. Identifiability results assume a ground-truth causal structure and ask when it can be recovered. In practice we never have access to that ground truth. The ground truth is the world. We only sample it — through sensors and instruments. Even when we intervene, we do not get to *see* the causal graph; we see more data. And the assumptions that make identifiability theorems go through are often too strong to hold in practice.
+
+So in the absence of theoretical guarantees, what is left of CRL? It seems to reduce to: *fit causal models by maximum likelihood to action-observation data.* Which is, once more, very close to deep generative modeling — except for the data.
+
+### Actions are not just extra labels
+
+This is the part that's maybe underrated. The interventional/action data in CRL is not a minor footnote — it is a qualitatively richer signal than passive observation. Actions give us:
+
+- *this action led to this observation;*
+- *this sequence of actions led to this sequence of observations;*
+- perturbations that reveal what is controllable and how mechanisms are wired.
+
+That is *temporal ordering plus controllability plus mechanism structure*, none of which we get from passive data. So I want to flip the usual framing: the *mechanism* by which CRL is pursued — maximum likelihood on action-observation data — is strictly more powerful than the mechanism of (passive) deep generative modeling — maximum likelihood on observations alone. In that sense CRL is deep generative modeling pointed at a better data stream.
+
+This is reminiscent of the "child as scientist" view from Gopnik and collaborators [@gopnik1999scientist]: children are active learners who run targeted little experiments on the world. Mixing action and observation seems to be the crucial ingredient, not an optional one.
+
+### Is the best model really sparse?
+
+CRL leans on sparsity — meaningful variables, few meaningful connections, small graphs — and there's a common belief that the physical world is sparse, so our models should be too. Sparsity also buys interpretability.
+
+But there's a counterpoint I want to keep alive. Perhaps a small number of variables explains most of the variance, while a long tail of weak connections explains the small-order effects [@millidge2025sparse]. If so, the *best* model isn't strictly sparse — it has a sparse core plus many small weights. And if we insist on capturing all of it, we drift right back toward deep-learning-style dense models. So sparsity might be a good *interpretability* prior without being the *accuracy*-optimal structure.
+
+*Research question: is the world — and hence the best world model — truly sparse, or is it a sparse core plus a dense tail of small effects? This is both a physics and a machine learning question.*
+
+## What might be next
+
+Suppose we grant the deflationary reading — that, mechanism aside, a lot of this is maximum likelihood on action-observation data. Then: what is the next thing to add for next-generation AI? Having actions and temporal dynamics is the clear first move. But there's a second, and I think it's important: **uncertainty**.
+
+### Maximum likelihood is the one-particle base case
+
+Maximum likelihood is just Bayes with a flat prior, collapsed to a point estimate. It's computationally cheap precisely because it keeps a single particle — the current best guess — and throws away the spread. The one thing it loses, relative to fuller versions of variational Bayes, is *uncertainty*.
+
+Uncertainty is nice for its own sake, but the reason it might be important is for decision-making. If we can maintain uncertainty — over states, parameters, structure, programs, whole models — then we can choose actions that **maximize information gain**: actions whose resulting observations tell us as much as possible about the world. That is curiosity, planning, and sample efficiency, all falling out of the same calculus. This is essentially the active-inference / Bayesian-decision picture [@dacosta2020active], and there's a reasonable degree of belief that brains compute and reduce uncertainty for action selection.
+
+So the program I'd state:
+
+- maintain uncertainty over (some of the model's) states, parameters, structure, programs, or architecture;
+- use that uncertainty for action selection and curiosity;
+- fit models not just to observations but to action-observation streams;
+- choose actions that maximize useful information gain/resolve uncertainty about latents.
+
+The research question is scalability. We want uncertainty placed *cheaply* enough to support real-time decisions under a manageable compute cost. A difficult research question is how to achieve this --- and whether a point estimate plus some lightweight machinery can fake the parts of uncertainty we actually need for planning — or whether we genuinely need to carry a distribution.
+
+### Candidate stacks
+
+For where to develop this program, I see two co-evolving stacks:
+
+1. **Program induction** [@tsividis2021human]
+2. **Probabilistic model inference / Bayesian model discovery** of which **GFlowNets** are an example [@bengio2021gflownetfoundations]
+
+While the two stacks are distinct in implementation, they seem to be mathematically equivalent. The axis that actually matters from a mathematical perspective is **iterative vs. amortized inference**. Iterative inference might be slow but could always be doable, while amortized inference is fast once trained.
+
+On GFlowNets specifically: *Question: are GFlowNets an instance of amortized inference?* My current understanding is that GFlowNet *training* is iterative inference/optimization, while *sampling* from a trained GFlowNet is amortized [@malkin2022gflownetsvi]. *Another question: how do GFlowNets explore the multiple modes of the posterior?*
+
+The question with GFlowNets is whether the training can be made to go fast. It's going to be very good at getting some very accurate posteriors, but maybe this is at the cost of forever being slow? I wonder how fast is state-of-the-art training of deep nets? If GFlowNet training can be made very fast this would be pretty unbeatable because you would have both an extremely accurate posterior and fast dynamics. If there *is* a bottleneck, then we should look at faster, less accurate approximations — small numbers of particles, say.
+
+*Research question: can inference over structures/programs be made fast enough for real-time decision-making? How fast is state-of-the-art deep net training, and does that suggest GFlowNets could be fast enough? If accurate inference is too slow, should we fall back to small-particle approximations?*
+
+### A speculative neuroscience aside
+
+Working memory seems to hold only a small number of hypotheses at once. But the Thousand Brains theory suggests the cortex runs an enormous number of models in parallel [@hawkins2021thousand]. A tempting picture: we subconsciously maintain very many models/hypotheses, and consciousness/working memory is an attention operator exposing just a few of them. *Flag: Check whether Thousand Brains theory really supports the stronger claim that cortical columns are different hypotheses over the world model, or whether the safer claim is that they are semi-independent sensorimotor models. I'm not sure the strong reading is warranted.*
+
+*Research questions: How many hypotheses/models do we as humans maintain at once? How do multiple models co-evolve — does it look like variational inference, Stein variational gradient descent, GFlowNet training, particle variational inference, or something else? Do the particles/models evolve independently or together and how?*
+
+## Upshot
+
+- Stripping away the data and assumptions, and CRL and deep generative modeling are both maximum likelihood with a complexity penalty — but we shouldn't understate the gap.
+- Yet the gap is real and lives in two places: **identifiability** (mostly aspirational in practice, since we never see the ground truth) and the **action/intervention/temporal signal** (genuinely richer, and the part I'm most convinced matters).
+- Beyond deep generative modeling with action-observation streams, the next step worth chasing is **uncertainty placed scalably enough to drive decision-making** — curiosity and information-seeking actions on top of action-observation learning.
+
+The focus, then: probabilistic inference over candidate spaces — programs or probabilistic models with better-than-nothing uncertainty tracking — coupled to decision-making that *uses* that uncertainty.
