@@ -1,0 +1,18 @@
+---
+title: "Toward Active World Modeling"
+date: 2026-07-06
+author: "Lancelot Da Costa"
+description: "This short document summarises the active world modeling research program pursued by the ATOM research community"
+draft: false
+toc: false
+---
+
+*This short document summarises the active world modeling research program pursued by the ATOM research community.*
+
+::: {.pdf-embed}
+<object data="research_program_v1.0.2.pdf" type="application/pdf" width="100%" height="900">
+  <p>Your browser can't display PDFs inline. <a href="research_program_v1.0.2.pdf">Download the PDF</a>.</p>
+</object>
+:::
+
+Download: [research_program_v1.0.2.pdf](research_program_v1.0.2.pdf)
