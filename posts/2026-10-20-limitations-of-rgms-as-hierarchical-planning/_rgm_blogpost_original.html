@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Karim Zaghw and Lancelot Da Costa">
+<meta name="dcterms.date" content="2026-10-20">
+
+<title>Limitations of RGMs as Hierarchical Planning Models</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="index_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<meta name="quarto:status" content="draft">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light"><div id="quarto-draft-alert" class="alert alert-warning"><i class="bi bi-pencil-square"></i>Draft</div>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#statistical-compression-as-an-assumption" id="toc-statistical-compression-as-an-assumption" class="nav-link active" data-scroll-target="#statistical-compression-as-an-assumption">Statistical Compression as an Assumption</a></li>
+  <li><a href="#preference-lifting" id="toc-preference-lifting" class="nav-link" data-scroll-target="#preference-lifting">Preference Lifting</a></li>
+  <li><a href="#learned-paths-are-not-automatically-actions" id="toc-learned-paths-are-not-automatically-actions" class="nav-link" data-scroll-target="#learned-paths-are-not-automatically-actions">Learned Paths Are Not Automatically Actions</a></li>
+  <li><a href="#controllable-and-uncontrollable-factors" id="toc-controllable-and-uncontrollable-factors" class="nav-link" data-scroll-target="#controllable-and-uncontrollable-factors">Controllable and Uncontrollable Factors</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Limitations of RGMs as Hierarchical Planning Models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Karim Zaghw </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 28, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This note assumes familiarity with RGMs, especially the fast structure learning procedure. The aim is not to rederive the construction, but to clarify how the learned hierarchy should and should not be interpreted for planning.</p>
+<p>Throughout the note, <span class="math inline">\(o\)</span> denotes sensory observations, <span class="math inline">\(s^{(1)}\)</span> denotes first-level hidden states, and <span class="math inline">\(s^{(2)}\)</span> denotes second-level hidden states. A learned higher-level path label is written as <span class="math inline">\(u^{(2)}\)</span>. A controllable high-level action or option is written as <span class="math inline">\(\beta^{(2)}\)</span>. This distinction is important: a learned path label is not automatically a controllable option.</p>
+<p>Fast structure learning constructs a hierarchy of predictive models. It groups lower-level variables, turns observed local pattern classes into higher-level states, learns path-conditioned transitions among those states, and passes state/path summaries upward. Read downward, higher-level states provide empirical priors over lower-level initial states and paths through the learned <span class="math inline">\(D\)</span> and <span class="math inline">\(E\)</span> mappings.</p>
+<p>This construction supports hierarchical inference and prediction. It does not, by itself, establish a valid hierarchy of controllable actions. The central distinction is that observed coarse transitions are not automatically equivalent to controllable high-level actions. The distinction matters because hierarchical planning requires more than a compressed predictive model. A useful planning abstraction must keep the information needed to choose good actions, and it must separate changes the agent can cause from changes it can only observe.</p>
+<section id="statistical-compression-as-an-assumption" class="level2">
+<h2 class="anchored" data-anchor-id="statistical-compression-as-an-assumption">Statistical Compression as an Assumption</h2>
+<p>Fast structure learning builds its state and path labels from the training stream. A higher-level state labels a local pattern that appeared in the data. A higher-level path labels a transition branch that appeared in the data. The learned hierarchy therefore reflects what was observed during structure learning.</p>
+<p>Consider a local first-level configuration made of two first-level factors,</p>
+<p><span class="math display">\[
+s_{\mathrm{loc}}^{(1)}
+=
+(s_a^{(1)},s_b^{(1)}).
+\]</span></p>
+<p>If <span class="math inline">\(s_a^{(1)}\)</span> has <span class="math inline">\(K_a\)</span> values and <span class="math inline">\(s_b^{(1)}\)</span> has <span class="math inline">\(K_b\)</span> values, the full local configuration space contains <span class="math inline">\(K_aK_b\)</span> configurations. If all configurations appear in the training data and each configuration receives its own second-level label, then the induced second-level state space satisfies</p>
+<p><span class="math display">\[
+K^{(2)} = K_aK_b.
+\]</span></p>
+<p>In that case, the second-level state is primarily a relabelling of the first-level joint configuration. There is no substantive state-space compression.</p>
+<p>If only a subset of configurations appears, then</p>
+<p><span class="math display">\[
+K^{(2)} &lt; K_aK_b.
+\]</span></p>
+<p>This reduction has two possible meanings. In the favourable case, it is genuine compression: the omitted or merged distinctions do not matter for later inference or control. In the weaker case, it is only support restriction: the model has fewer states because it only represents the configurations that occurred in the training stream. Fast structure learning does not, by itself, show which interpretation is correct.</p>
+<p>This matters for generalization. If a new first-level configuration appears during later inference, the model does not create a new second-level pattern state for it. Instead, it tries to explain the new configuration using the likelihoods of the second-level states it already learned. The posterior may become spread across several existing states, or the observation may simply fit the model poorly. A new hidden state would require structure learning to be rerun or extended. The same issue applies to paths: if a useful first-level transition never appeared in the training stream, it will not be available as a second-level path label.</p>
+<p>The statistical compression assumption is therefore that the coarse states and transitions seen during training are enough for the later task. This assumption may be reasonable in restricted domains. It may also be exactly where the computational savings come from: the model plans only with a smaller set of learned coarse states and paths. But it should be stated explicitly. The learned hierarchy does not guarantee that every reachable, useful, or task-relevant first-level possibility has been represented. This suggests that fast structure learning should be extended to work at test time, enabling continual learning of the hierarchy. </p>
+</section>
+<section id="preference-lifting" class="level2">
+<h2 class="anchored" data-anchor-id="preference-lifting">Preference Lifting</h2>
+<p>Fast structure learning does not automatically specify how preferences should be used at higher levels of the hierarchy. In standard active-inference planning, preferences are usually defined over observations. For example, if the preferred observation distribution is <span class="math inline">\(p^*(o)\)</span>, then a first-level path <span class="math inline">\(u^{(1)}\)</span> can be scored through the utility term in the expected free-energy</p>
+<p><span class="math display">\[
+-\mathbb E_{q(o\mid u^{(1)})}
+[
+\log p^*(o)
+].
+\]</span></p>
+<p>This does not require a separate preference distribution over first-level states. The first-level model predicts observations under each candidate path and compares those predicted observations directly with <span class="math inline">\(p^*(o)\)</span>.</p>
+<p>The issue appears when planning is moved up one level. A second-level planner does not directly choose among predicted observations. It chooses among second-level paths and predicts second-level states. These second-level states generate or predict first-level states. Therefore, to evaluate second-level plans, the model needs a way to say which first-level states are valuable.</p>
+<p>One way to construct this value is to use the first-level likelihood. A first-level state <span class="math inline">\(s^{(1)}\)</span> can be assigned a value by averaging the original observation preference over the observations it predicts:</p>
+<p><span class="math display">\[
+V(s^{(1)})
+=
+\sum_o
+P(o\mid s^{(1)})
+\log p^*(o).
+\]</span></p>
+<p>This induces a preference over first-level states:</p>
+<p><span class="math display">\[
+p^*(s^{(1)})
+\propto
+\exp V(s^{(1)}).
+\]</span></p>
+<p>A second-level state <span class="math inline">\(s^{(2)}\)</span> can then be scored through the first-level states it predicts. If the second-level state predicts first-level states through <span class="math inline">\(P(s^{(1)}\mid s^{(2)})\)</span>, its value can be written as</p>
+<p><span class="math display">\[
+V(s^{(2)})
+=
+\sum_{s^{(1)}}
+P(s^{(1)}\mid s^{(2)})
+\log p^*(s^{(1)}).
+\]</span></p>
+<p>This is the preference-lifting step. It converts preferences over observations into preferences over first-level states, so that second-level planning can evaluate abstract states and paths.</p>
+<p>The caveat is that this only works well if the abstraction preserves value-relevant distinctions. Suppose two first-level states, <span class="math inline">\(s_a^{(1)}\)</span> and <span class="math inline">\(s_b^{(1)}\)</span>, are both generated by the same second-level state <span class="math inline">\(s^{(2)}\)</span>. If <span class="math inline">\(s_a^{(1)}\)</span> tends to generate preferred observations but <span class="math inline">\(s_b^{(1)}\)</span> tends to generate dispreferred observations, then the value of <span class="math inline">\(s^{(2)}\)</span> averages over an important difference. The high-level planner may no longer know whether moving toward <span class="math inline">\(s^{(2)}\)</span> is good or bad.</p>
+<p>Thus preference lifting is not merely a notational issue. A higher-level state can be assigned a value through the lower-level states and observations it predicts, but this value is useful for planning only if the higher-level abstraction has not merged lower-level states that should remain separate for the task. This suggests one should perhaps incorporate value in the way states are lumped together in future work. </p>
+<p>This is a real gap, but the required object is clear: a decoder or value map from higher-level states to the lower-level variables on which preferences are defined. The deeper problem is whether the learned higher-level paths have valid control semantics, as we'll see next.</p>
+</section>
+<section id="learned-paths-are-not-automatically-actions" class="level2">
+<h2 class="anchored" data-anchor-id="learned-paths-are-not-automatically-actions">Learned Paths Are Not Automatically Actions</h2>
+<p>In an RGM, a path value selects one transition rule:</p>
+<p><span class="math display">\[
+P(s_{t+1}\mid s_t,u_t).
+\]</span></p>
+<p>At the second level, this means that a learned path label <span class="math inline">\(u^{(2)}\)</span> selects a transition among second-level states. If a path is marked as controllable, the reference planning routine can score that path using expected free energy. In that case, the agent can choose among path values.</p>
+<p>The issue is that fast structure learning does not learn which transitions are interventions. It learns which transitions were observed in the training stream. A learned path <span class="math inline">\(u^{(2)}\)</span> therefore means “this second-level transition occurred,” not necessarily “the agent can choose this second-level transition.”</p>
+<p>This is enough for prediction, but not for action.</p>
+<p>The problem appears when an observed transition combines controllable and uncontrollable changes. If the whole transition is treated as a selectable high-level path, the planner may treat an exogenous change as if it were under the agent’s control.</p>
+<p>For example, suppose a second-level state labels a first-level configuration with two components:</p>
+<p><span class="math display">\[
+s_{\mathrm{loc}}^{(1)}
+=
+(r,h),
+\]</span></p>
+<p>where <span class="math inline">\(r\)</span> is the weather state and <span class="math inline">\(h\)</span> is the umbrella state. Rain is exogenous, while the umbrella state is controllable. Suppose the training stream contains the coarse transition</p>
+<p><span class="math display">\[
+(\text{rain},\text{open})
+\to
+(\text{dry},\text{closed}).
+\]</span></p>
+<p>Fast structure learning can assign this transition a path label <span class="math inline">\(u^{(2)}\)</span>. As a prediction, this is fine: this transition occurred in the data. But as an action, it is wrong. Selecting this path would mean selecting both that the umbrella closes and that the rain stops.</p>
+<p>A valid controllable option should only control the umbrella, for example</p>
+<p><span class="math display">\[
+\beta^{(2)}
+=
+\text{close umbrella}.
+\]</span></p>
+<p>The weather dynamics should remain exogenous:</p>
+<p><span class="math display">\[
+P(r',h'\mid r,h,\beta^{(2)})
+=
+P(r'\mid r)
+P(h'\mid r,h,\beta^{(2)}),
+\]</span></p>
+<p>where <span class="math inline">\(r\)</span> denotes the weather state and <span class="math inline">\(h\)</span> denotes the umbrella state. The controllable option <span class="math inline">\(\beta^{(2)}\)</span> can influence <span class="math inline">\(h'\)</span>, but it should not directly select <span class="math inline">\(r'\)</span>.</p>
+<p>Thus the main limitation of the current RGM is:</p>
+<p><span class="math display">\[
+\text{learned path label } u^{(2)}
+\not\Rightarrow
+\text{controllable option } \beta^{(2)}.
+\]</span></p>
+<p>A further classification step is required. Each learned path must be interpreted as either a controllable option, an exogenous transition mode, or a mixed statistical transition that should not be selected as a single action. Fast structure learning does not provide this classification by itself. In future work, fast structure learning could be adapted to not bundle controllable and uncontrollable states together.</p>
+</section>
+<section id="controllable-and-uncontrollable-factors" class="level2">
+<h2 class="anchored" data-anchor-id="controllable-and-uncontrollable-factors">Controllable and Uncontrollable Factors</h2>
+<p>One possible response is to keep controllable and uncontrollable factors separate during structure learning. For example, the model could learn one second-level factor for controllable state and another for uncontrollable context:</p>
+<p><span class="math display">\[
+s_{\mathrm{ctrl}}^{(2)}
+=
+\text{controllable state},
+\qquad
+s_{\mathrm{ctx}}^{(2)}
+=
+\text{uncontrollable context}.
+\]</span></p>
+<p>Paths of <span class="math inline">\(s_{\mathrm{ctrl}}^{(2)}\)</span> could then be treated as possible controllable options, while paths of <span class="math inline">\(s_{\mathrm{ctx}}^{(2)}\)</span> would be inferred as exogenous context. This helps avoid treating a mixed context-control transition as a single action. However, this separation does not solve the whole problem.</p>
+<p>The first issue is value dependence. Suppose the observation is</p>
+<p><span class="math display">\[
+o \in \{\text{dry},\text{wet}\},
+\]</span></p>
+<p>and <span class="math inline">\(\text{wet}\)</span> is strongly unpreferred. Let the relevant hidden state have two components,</p>
+<p><span class="math display">\[
+(r,h),
+\]</span></p>
+<p>where <span class="math inline">\(r\)</span> is the weather state and <span class="math inline">\(h\)</span> is the umbrella state. The observation <span class="math inline">\(\text{wet}\)</span> depends on these variables jointly. For example,</p>
+<p><span class="math display">\[
+P(o=\text{wet}\mid r=\text{rain},h=\text{closed}) \approx 1,
+\]</span></p>
+<p>but</p>
+<p><span class="math display">\[
+P(o=\text{wet}\mid r=\text{rain},h=\text{open}) \approx 0,
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+P(o=\text{wet}\mid r=\text{dry},h=\text{closed}) \approx 0.
+\]</span></p>
+<p>Thus the bad outcome is not caused by rain alone or by a closed umbrella alone. It is caused by their combination.</p>
+<p>This matters for preference lifting. If preferences are lifted to the joint state <span class="math inline">\((r,h)\)</span>, there is no problem: the joint state <span class="math inline">\((\text{rain},\text{closed})\)</span> receives low value, while <span class="math inline">\((\text{rain},\text{open})\)</span> and <span class="math inline">\((\text{dry},\text{closed})\)</span> do not. But if preference lifting produces separate preferences over <span class="math inline">\(r\)</span> and <span class="math inline">\(h\)</span> by marginalizing out the other variable, then information is lost. The model is forced to assign a value to rain without knowing whether the umbrella is open, and a value to the umbrella state without knowing whether it is raining.</p>
+<p>In other words, the true value has the form</p>
+<p><span class="math display">\[
+V(r,h),
+\]</span></p>
+<p>but a separated preference representation approximates it by something like</p>
+<p><span class="math display">\[
+V_r(r) + V_h(h).
+\]</span></p>
+<p>This approximation cannot exactly represent the fact that only the combination <span class="math inline">\((\text{rain},\text{closed})\)</span> is bad. Therefore, separating controllable and uncontrollable factors can make preference lifting approximate whenever preferences depend on their joint consequences for observations. This suggests that preference lifting should not use this sort of (mean-field) approximation, marginalizing across factors.</p>
+<p>The second issue is transition dependence. Suppose the controllable state is location, with values <span class="math inline">\(\text{outside}\)</span> and <span class="math inline">\(\text{inside}\)</span>, and the contextual state is door status, with values <span class="math inline">\(\text{locked}\)</span> and <span class="math inline">\(\text{unlocked}\)</span>. The option</p>
+<p><span class="math display">\[
+\beta^{(2)}=\text{enter}
+\]</span></p>
+<p>changes the location only if the door is unlocked. If the door is locked, the same option fails. The correct transition structure is therefore not</p>
+<p><span class="math display">\[
+P(s_{\mathrm{ctrl},t+1}^{(2)}
+\mid
+s_{\mathrm{ctrl},t}^{(2)},
+\beta_t^{(2)}),
+\]</span></p>
+<p>but</p>
+<p><span class="math display">\[
+P(s_{\mathrm{ctrl},t+1}^{(2)}
+\mid
+s_{\mathrm{ctrl},t}^{(2)},
+s_{\mathrm{ctx},t}^{(2)},
+\beta_t^{(2)}).
+\]</span></p>
+<p>A general POMDP can represent this in two ways. A tabular POMDP can lump location and door status into one joint state. A factored POMDP can keep them separate while allowing the transition of location to depend on door status. In both cases, the model preserves the dependence between the controllable transition and the uncontrollable context.</p>
+<p>The standard RGM construction does not naturally provide this second option. Its factorization does not introduce arbitrary conditional dependencies between factors at the same level. If the transition from outside to inside depends on whether the door is locked, the straightforward RGM representation is therefore to combine location and door status into a single joint factor. This suggests the need for factored RGMs that keep track of conditional dependencies across factors.</p>
+<p>But this creates a tension. If location and door status are lumped together, then the model has preserved the context dependence, but it has no longer cleanly separated controllable state from uncontrollable context. If they are separated, then the model can distinguish what is controllable from what is contextual, but it risks losing the conditional transition structure that makes the action model correct.</p>
+<p>This is why separating controllable and uncontrollable factors is not sufficient. It prevents one error, namely treating exogenous changes as actions. But it does not guarantee that the model learns how exogenous context changes the effects of controllable actions. Fast structure learning learns empirical states and empirical transition labels from passive data. It does not by itself learn the causal or conditional control structure needed to say that the option <span class="math inline">\(\text{enter}\)</span> succeeds when the door is unlocked and fails when the door is locked.</p>
+<p>Thus the repair is not simply to group only controllable factors together. The stronger requirement is to preserve the dependency scope needed for control. The model must represent what the agent can choose, what it must condition on, and how contextual variables change both the value and the consequences of controllable options.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Fast structure learning constructs an abstract predictive hierarchy. This hierarchy can support prediction, hierarchical inference, and empirical priors across scales. It should not automatically be interpreted as an abstract control hierarchy.</p>
+<p>The computational motivation for hierarchical planning is that a high-level transition can stand for a lower-level episode. A flat planner over horizon <span class="math inline">\(H^{(2)}H^{(1)}\)</span> faces a primitive policy space on the order of</p>
+<p><span class="math display">\[
+|\mathcal U^{(1)}|^{H^{(2)}H^{(1)}}.
+\]</span></p>
+<p>An ideal two-level planner would replace this with a cost closer to</p>
+<p><span class="math display">\[
+|\mathcal U^{(2)}|^{H^{(2)}}
++
+H^{(2)}|\mathcal U^{(1)}|^{H^{(1)}}.
+\]</span></p>
+<p>This reduction is meaningful only if the high-level action space is much smaller than the space of lower-level policy fragments:</p>
+<p><span class="math display">\[
+|\mathcal U^{(2)}|
+\ll
+|\mathcal U^{(1)}|^{H^{(1)}}.
+\]</span></p>
+<p>Fast structure learning can produce a small empirical set of second-level path labels,</p>
+<p><span class="math display">\[
+\mathcal P_{\mathrm{FSL}}^{(2)}
+\subseteq
+(\mathcal U^{(1)})^{H^{(1)}}.
+\]</span></p>
+<p>However, a small empirical path set is not necessarily a valid option set. The computational savings are justified only if the learned paths are representative, task-relevant, correctly separated into controllable and exogenous modes, and supplied with lower-level implementations when treated as controllable options.</p>
+<p>The main limitations are therefore:</p>
+<ol type="1">
+<li>The compression is statistical and depends on the representativeness of the training stream.</li>
+<li>Low-level preferences must be lifted through a suitable decoder or value map.</li>
+<li>Preference lifting can become approximate if value depends on combinations of factors but preferences are represented separately over those factors.</li>
+<li>Learned path labels <span class="math inline">\(u^{(2)}\)</span> must be classified as controllable options <span class="math inline">\(\beta^{(2)}\)</span>, exogenous transition modes, or mixed statistical transitions.</li>
+<li>Contextual variables may need to modulate the value and consequences of controllable options.</li>
+</ol>
+<p>The concise conclusion is:</p>
+<p><span class="math display">\[
+\text{fewer learned paths}
+\neq
+\text{valid planning abstraction}.
+\]</span></p>
+<p>Equivalently, RGMs learn an abstract predictive hierarchy, whereas hierarchical planning requires an abstract control hierarchy.</p>
+<p>This distinction preserves the value of the RGM construction while clarifying its current limitation. RGMs build hierarchical models of observed structure. Additional mechanisms, such as those mentioned in this post, are required before the learned hierarchy can be treated as a hierarchy of valid actions.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
