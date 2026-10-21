@@ -1,14 +1,15 @@
 ---
-title: "Limitations of RGMs as Hierarchical Planning Models"
+title: "Limitations of Renormalizing Generative Models as Hierarchical Planning Models"
 date: 2026-10-20
 author:
   - "Karim Zaghw"
   - "Lancelot Da Costa"
 draft: false
 toc: true
+bibliography: references.bib
 ---
 
-This note assumes familiarity with RGMs, especially the fast structure learning procedure. The aim is not to rederive the construction, but to clarify how the learned hierarchy should and should not be interpreted for planning.
+This note assumes familiarity with Renormalizing Generative Models (RGMs) [@zaghw2026renormalising; @pashea2026rgms], especially the fast structure learning procedure [@friston2025pixels; @friston2025gradientfree; @zaghw2026renormalising]. The aim is not to rederive the construction, but to clarify how the learned hierarchy should and should not be interpreted for planning.
 
 Throughout the note, $o$ denotes sensory observations, $s^{(1)}$ denotes first-level hidden states, and $s^{(2)}$ denotes second-level hidden states. A learned higher-level path label is written as $u^{(2)}$. A controllable high-level action or option is written as $\beta^{(2)}$. This distinction is important: a learned path label is not automatically a controllable option.
 
